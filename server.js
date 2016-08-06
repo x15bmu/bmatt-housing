@@ -7,6 +7,8 @@ var Promise = require('bluebird');
 var request = require('request');
 var cheerio = require('cheerio');
 var mapsApiKey = 'AIzaSyCI1GoBPD3_D2V6e_4Erek_UQDD-CjTcVg '
+var googleplexLat = 37.421915;
+var googleplexLon = -122.084100;
 
 app.get('/', function (req, res) {
   res.sendFile('index.html');
@@ -53,7 +55,7 @@ GoogleBusStop.prototype.getLong = function() {
 };
 
 class Apartment {
-	constructor(address, href, price, img, lat, long, walkScore, transitScore, bikeScore, crimeGrade, closestGbusStop, closestGbusStopDist) {
+	constructor(address, href, price, img, lat, long, walkScore, transitScore, bikeScore, crimeGrade, closestGbusStop, closestGbusStopDist, timeToGoogle) {
 		this.address = address;
 		this.href = href;
 		this.price = price;
@@ -66,6 +68,7 @@ class Apartment {
 		this.crimeGrade = crimeGrade;
 		this.closestGbusStop = closestGbusStop;
 		this.closestGbusStopDist = closestGbusStopDist;
+		this.timeToGoogle = timeToGoogle;
 	}
 }
 
@@ -155,7 +158,27 @@ function addressToLatLongAddress(address) {
 	});
 }
 
-
+function getTravelTime(lat1, lon1, lat2, lon2) {
+	return new Promise(function(resolve, reject) {
+		var origin = lat1 + ',' + lon1;
+		var dest = lat2 + ',' + lon2;
+		var base_url = 'https://maps.googleapis.com/maps/api/distancematrix/json?units=imperial&departure_time=1476111600&origins=';
+		var url = base_url + origin + '&destinations=' + dest + '&key=' + mapsApiKey;
+		request(url, function(error, response, body) {
+			if (!error && response.statusCode === 200) {
+				var json = JSON.parse(body);
+				if (json['status'] === 'OK'){
+					var time = json['rows'][0]['elements'][0]['duration_in_traffic']['text'];
+					resolve(time);
+				} else {
+					reject(json['status'], response);
+				}
+			} else {
+				reject(error, response);
+			}
+		});
+	});
+}
 
 function getWalkScoreBody(formatted_address) {
 	return new Promise(function(resolve, reject) {
@@ -242,7 +265,11 @@ class ApartmentGetter {
 			var price = self.getPrice(jqApartment);
 			var image = self.getImage(jqApartment);
 			getAddressData(address).spread(function(lat, long, closestGbusStop, closestGbusStopDist, formatted_address, walkScore, transitScore, bikeScore, crimeGrade) {
-				resolve(new Apartment(address, href, price, image, lat, long, walkScore, transitScore, bikeScore, crimeGrade, closestGbusStop, closestGbusStopDist));
+				getTravelTime(lat, long, googleplexLat, googleplexLon).then(function(time) {
+					resolve(new Apartment(address, href, price, image, lat, long, walkScore, transitScore, bikeScore, crimeGrade, closestGbusStop, closestGbusStopDist, time));
+				}).catch(function(error) {
+					return Promise.reject(error);
+				});
 			}).catch(function(error) {
 				console.log(error);
 				reject(error);
