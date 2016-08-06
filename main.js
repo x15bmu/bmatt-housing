@@ -4,6 +4,7 @@ $(document).ready(function() {
 	$.ajax('li.html').done(function(templateText){
 		template = Handlebars.compile(templateText);
 
+		$('#loading').show();
 		$.ajax('/apartments').done(function(data) {
 			for (var i = 0; i < data.length; i++) {
 				data[i].closestGbusStopDist = Math.round(data[i].closestGbusStopDist * 1000) / 1000
@@ -11,6 +12,7 @@ $(document).ready(function() {
 			var context = {
 				apartments: data
 			}
+			$('#loading').hide();
 			reapplyTemplate(context);
 			apartments = data;
 			console.log(apartments);
