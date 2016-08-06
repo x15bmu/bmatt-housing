@@ -1,10 +1,12 @@
+"use strict"
+
 var express = require('express');
 var app = express();
 app.use(express.static(__dirname));
 var Promise = require('bluebird');
 var request = require('request');
 var cheerio = require('cheerio');
-mapsApiKey = 'AIzaSyCI1GoBPD3_D2V6e_4Erek_UQDD-CjTcVg '
+var mapsApiKey = 'AIzaSyCI1GoBPD3_D2V6e_4Erek_UQDD-CjTcVg '
 
 app.get('/', function (req, res) {
   res.sendFile('index.html');
@@ -68,7 +70,7 @@ class Apartment {
 }
 
 
-gbusStops = [
+var gbusStops = [
 	new GoogleBusStop(37.799374, -122.43905, 'Lombard @ Pierce'),
 	new GoogleBusStop(37.780259, -122.472442,'Park Presidio @ Geary'),
 	new GoogleBusStop(37.760079, -122.477024,'19th @ Kirkham'),
@@ -119,11 +121,11 @@ function getDistanceFromLatLonInMiles(lat1,lon1,lat2,lon2) {
 }
 
 function findClosestGbusStop(lat, long) {
-	minDist = 1e6;
-	minStop = null;
+	var minDist = 1e6;
+	var minStop = null;
 	for (var i = 0; i < gbusStops.length; i++) {
-		stop = gbusStops[i];
-		dist = getDistanceFromLatLonInMiles(lat, long, stop.getLat(), stop.getLong());
+		var stop = gbusStops[i];
+		var dist = getDistanceFromLatLonInMiles(lat, long, stop.getLat(), stop.getLong());
 		if (dist < minDist) {
 			minStop = stop;
 			minDist = dist;
@@ -138,7 +140,7 @@ function addressToLatLongAddress(address) {
 		// reject('maps disabled');
 		request('https://maps.googleapis.com/maps/api/geocode/json?address=' + encAddr + '&key=' + mapsApiKey, function(error, response, body) {
 			if (!error && response.statusCode === 200) {
-				json = JSON.parse(body);
+				var json = JSON.parse(body);
 				if (json['status'] === 'OK'){
 					var location = json['results'][0]['geometry']['location'];
 					var full_address = json['results'][0]['formatted_address'];
@@ -177,7 +179,9 @@ function getAddressData(address) {
 			long = _long;
 			formatted_address = _formatted_address;
 
-			[closestGbusStop, closestGbusStopDist] = findClosestGbusStop(lat, long);
+			var arr = findClosestGbusStop(lat, long);
+			closestGbusStop = arr[0];
+			closestGbusStopDist = arr[1];
 			return formatted_address;
 		}).then(getWalkScoreBody).then(function(body) {
 			var $ = cheerio.load(body);
@@ -336,14 +340,14 @@ function timed() {
 		apartmentPromises = newApartmentPromises;
 	}
 
-	z = new ZillowApartmentGetter();
+	var z = new ZillowApartmentGetter();
 	newApartmentPromises.push(new Promise(function(resolve) {
 		z.getApartments('http://www.zillow.com/homes/for_rent/San-Francisco-CA/apartment_duplex_type/20330_rid/4-_beds/1.5-_baths/0-2304149_price/0-8000_mp/featured_sort/37.785435,-122.364779,37.733593,-122.545023_rect/12_zm/').then(function(apartments) {
 			resolve(apartments);
 		});
 	}));
 
-	t = new TruliaApartmentGetter();
+	var t = new TruliaApartmentGetter();
 	newApartmentPromises.push(new Promise(function(resolve) {
 		t.getApartments('http://www.trulia.com/for_rent/San_Francisco,CA/4p_beds/2p_baths/0-8000_price/APARTMENT%7CCONDO%7CTOWNHOUSE%7CMULTI-FAMILY%7CLOFT_type').then(function(apartments) {
 			resolve(apartments)
