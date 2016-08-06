@@ -9,13 +9,14 @@ $(document).ready(function() {
 			for (var i = 0; i < data.length; i++) {
 				data[i].closestGbusStopDist = Math.round(data[i].closestGbusStopDist * 1000) / 1000
 			}
-			var context = {
-				apartments: data
-			}
+			// var context = {
+			// 	apartments: data
+			// }
 			$('#loading').hide();
-			reapplyTemplate(context);
+			// reapplyTemplate(context);
 			apartments = data;
 			console.log(apartments);
+			sortApartments();
 		});
 	});
 
@@ -25,6 +26,7 @@ $(document).ready(function() {
 	});
 
 	$('#inc-dec-button').on('click', function() {
+		event.preventDefault();
 		obj = $(this);
 		if (obj.hasClass('inc')) {
 			obj.removeClass('inc');
