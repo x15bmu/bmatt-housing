@@ -174,7 +174,12 @@ function getWalkScoreBody(formatted_address) {
 function getAddressData(address) {
 	return new Promise(function(resolve, reject) {
 		var lat, long, closestGbusStop, closestGbusStopDist, formatted_address, walkScore, transitScore, bikeScore, crimeGrade;
-		addressToLatLongAddress(address).spread(function(_lat, _long, _formatted_address) {
+		var llAddress = address;
+		if (!llAddress.includes('San Francisco')) {
+			llAddress = llAddress + ' San Francisco';
+			console.log(llAddress);
+		}
+		addressToLatLongAddress(llAddress).spread(function(_lat, _long, _formatted_address) {
 			lat = _lat;
 			long = _long;
 			formatted_address = _formatted_address;
