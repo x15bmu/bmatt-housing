@@ -17,7 +17,7 @@ app.get('/info', function(req, res) {
 });
 
 app.get('/search', function(req, res) {
-	searchString = req.query.search;
+	var searchString = req.query.search;
 	search(searchString).then(function(apartment) {
 		res.json(apartment);
 	}).catch(function(error) {
