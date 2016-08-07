@@ -183,7 +183,7 @@ function getTravelTime(lat1, lon1, lat2, lon2) {
 function getWalkScoreBody(formatted_address) {
 	return new Promise(function(resolve, reject) {
 		var base_url = 'https://www.walkscore.com/score/'
-		formatted_address = formatted_address.replace(',', '').replace(' ', '-');
+		formatted_address = formatted_address.replace(/,/g, '').replace(/ /g, '-');
 		request(base_url + formatted_address, function (error, response, body) {
 			if (!error && response.statusCode === 200) {
 				resolve(body);
@@ -230,7 +230,7 @@ function getAddressData(address) {
 			var crimeGrades = $('div.crime-units div.letter-grade').toArray();
 			crimeGrade = 'unknown';
 			if (crimeGrades.length > 0) {
-				crimeGrade = $(crimeGrades[0]).html().replace(' ', '') || 'unknown';
+				crimeGrade = $(crimeGrades[0]).html().replace(/ /g, '') || 'unknown';
 			}
 			resolve([lat, long, closestGbusStop, closestGbusStopDist, formatted_address, walkScore, transitScore, bikeScore, crimeGrade]);
 		}).catch(reject);
