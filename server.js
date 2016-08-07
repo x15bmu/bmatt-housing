@@ -200,7 +200,6 @@ function getAddressData(address) {
 		var llAddress = address;
 		if (!llAddress.includes('San Francisco')) {
 			llAddress = llAddress + ' San Francisco';
-			console.log(llAddress);
 		}
 		addressToLatLongAddress(llAddress).spread(function(_lat, _long, _formatted_address) {
 			lat = _lat;
@@ -296,7 +295,7 @@ class ApartmentGetter {
 								apartments.push(apartment);
 							}
 						})
-					}).timeout(20000).then(function() {
+					}).timeout(10000).then(function() {
 						resolve(apartments);
 					}).catch(Promise.TimeoutError, function(e) {
 						console.log('Timed out. Got number of apartments: ' + apartments.length);
@@ -364,6 +363,34 @@ class TruliaApartmentGetter extends ApartmentGetter {
 	}
 }
 
+class ZumperApartmentGetter extends ApartmentGetter {
+	getApartmentItems($) {
+		return $('.listingFeed').children().toArray();
+	}
+
+	getAddress(apartment) {
+		console.log(apartment.find('.feedItem-details h3 a').html());
+		return apartment.find('.feedItem-details h3 a').html();
+	}
+
+	getHref(apartment) {
+		return 'http://zumper.com' + apartment.find('.feedItem-details h3 a').attr('href');
+	}
+
+	getPrice(apartment) {
+		return apartment.find('.feedItem-details span[ng-bind=::item.priceText]').html();
+	}
+
+	getImage(apartment) {
+		var img = apartment.find('.feedItem-img');
+		if (!!img.attr('ng-src')) {
+			return img.attr('ng-src');
+		} else {
+			return img.attr('src');
+		}
+	}
+}
+
 var apartmentPromises = null;
 
 function timed() {
@@ -382,9 +409,17 @@ function timed() {
 	var t = new TruliaApartmentGetter();
 	newApartmentPromises.push(new Promise(function(resolve) {
 		t.getApartments('http://www.trulia.com/for_rent/San_Francisco,CA/4p_beds/2p_baths/0-8000_price/APARTMENT%7CCONDO%7CTOWNHOUSE%7CMULTI-FAMILY%7CLOFT_type').then(function(apartments) {
-			resolve(apartments)
+			resolve(apartments);
 		});
 	}));
+
+	// var zu = new ZumperApartmentGetter();
+	// newApartmentPromises.push(new Promise(function(resolve) {
+	// 	zu.getApartments('https://www.zumper.com/apartments-for-rent/san-francisco-ca/4+beds/under-8000?property-categories=apartment').then(function(apartments) {
+	// 		resolve(apartments);
+	// 	});
+	// }));
+
 	Promise.all(newApartmentPromises).then(function() {
 		apartmentPromises = newApartmentPromises;
 	});
