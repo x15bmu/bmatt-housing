@@ -8,13 +8,13 @@ $(document).ready(function() {
 			$('#loading').show();
 			
 			 $.ajax('/search?' + $(this).serialize()).done(function(data) {
-				for (var i = 0; i < data.length; i++) {
-					data[i].closestGbusStopDist = Math.round(data[i].closestGbusStopDist * 1000) / 1000
-				}
+				data.closestGbusStopDist = Math.round(data.closestGbusStopDist * 1000) / 1000;
+				console.log(data);
 				var context = {
 					apartments: [data]
 				}
 				$('#loading').hide();
+				$('#apartment-list').empty(); // empty again in case it gets filled
 				$('#apartment-list').append(template(context));
 			});
 		});

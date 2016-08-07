@@ -9,6 +9,8 @@ var cheerio = require('cheerio');
 var mapsApiKey = 'AIzaSyCI1GoBPD3_D2V6e_4Erek_UQDD-CjTcVg '
 var googleplexLat = 37.421915;
 var googleplexLon = -122.084100;
+var sfStationLat = 37.776597;
+var sfStationLon = -122.394685;
 
 console.log('Starting up');
 
@@ -57,7 +59,8 @@ GoogleBusStop.prototype.getLong = function() {
 };
 
 class Apartment {
-	constructor(address, href, price, img, lat, long, walkScore, transitScore, bikeScore, crimeGrade, closestGbusStop, closestGbusStopDist, timeToGoogle) {
+	constructor(address, href, price, img, lat, long, walkScore, transitScore, bikeScore, crimeGrade, 
+				closestGbusStop, closestGbusStopDist, timeToGoogle, timeToSfStation) {
 		this.address = address;
 		this.href = href;
 		this.price = price;
@@ -71,6 +74,7 @@ class Apartment {
 		this.closestGbusStop = closestGbusStop;
 		this.closestGbusStopDist = closestGbusStopDist;
 		this.timeToGoogle = timeToGoogle;
+		this.timeToSfStation = timeToSfStation;
 	}
 }
 
@@ -160,24 +164,41 @@ function addressToLatLongAddress(address) {
 	});
 }
 
-function getTravelTime(lat1, lon1, lat2, lon2) {
+function getTravelTime(origins, destinations) {
 	return new Promise(function(resolve, reject) {
-		var origin = lat1 + ',' + lon1;
-		var dest = lat2 + ',' + lon2;
+		var originString = origins.join('|');
+		var destString = destinations.join('|');
 		var base_url = 'https://maps.googleapis.com/maps/api/distancematrix/json?units=imperial&departure_time=1476111600&origins=';
-		var url = base_url + origin + '&destinations=' + dest + '&key=' + mapsApiKey;
+		var url = base_url + originString + '&destinations=' + destString + '&key=' + mapsApiKey;
 		request(url, function(error, response, body) {
 			if (!error && response.statusCode === 200) {
 				var json = JSON.parse(body);
 				if (json['status'] === 'OK'){
-					var time = json['rows'][0]['elements'][0]['duration_in_traffic']['text'];
-					resolve(time);
+					var elements = json['rows'][0]['elements'];
+					var times = [];
+					var trafficTimes = [];
+					for (var e of elements) {
+						times.push(e['duration']['text']);
+						trafficTimes.push(e['duration_in_traffic']['text']);
+					}
+					resolve([times, trafficTimes]);
 				} else {
 					reject(json['status']);
 				}
 			} else {
 				reject(error || response);
 			}
+		});
+	});
+}
+
+function getGoogleSfStationTravelTimes(lat, long) {
+	return new Promise(function(resolve, reject) {
+		getTravelTime([lat + ',' + long], [googleplexLat + ',' + googleplexLon, sfStationLat + ',' + sfStationLon]).spread(function(times, trafficTimes) {
+			resolve([trafficTimes[0], times[1]]);
+		}).catch(function(error) {
+			console.log('Reject getGoogleSfStationTravelTimes', error, address);
+			reject(error);
 		});
 	});
 }
@@ -267,9 +288,10 @@ class ApartmentGetter {
 			var image = self.getImage(jqApartment);
 			console.log('processAsync address', address);
 			getAddressData(address).spread(function(lat, long, closestGbusStop, closestGbusStopDist, formatted_address, walkScore, transitScore, bikeScore, crimeGrade) {
-				getTravelTime(lat, long, googleplexLat, googleplexLon).then(function(time) {
+				getGoogleSfStationTravelTimes(lat, long).spread(function(googleTime, sfStationTime) {
 					console.log('resolve processAsync address', address);
-					resolve(new Apartment(address, href, price, image, lat, long, walkScore, transitScore, bikeScore, crimeGrade, closestGbusStop, closestGbusStopDist, time));
+					resolve(new Apartment(address, href, price, image, lat, long, walkScore, transitScore, bikeScore, crimeGrade, 
+										  closestGbusStop, closestGbusStopDist, googleTime, sfStationTime));
 				}).catch(function(error) {
 					console.log('Reject getTravelTime', error, address);
 					reject(error);
@@ -293,7 +315,7 @@ class ApartmentGetter {
 
 					var apartments = [];
 					Promise.map(apartmentItems, function(apartment) {
-						var jqApartment = $(apartment)
+						var jqApartment = $(apartment);
 						return self.processApartmentAsync(self, jqApartment).catch(function(error) {
 							console.log('processApartmentAsync error');
 							console.log(error);
@@ -375,14 +397,13 @@ class TruliaApartmentGetter extends ApartmentGetter {
 	}
 }
 
-class ZumperApartmentGetter extends ApartmentGetter {
+class PadMapperApartmentGetter extends ApartmentGetter {
 	getApartmentItems($) {
-		return $('.listingFeed').children().toArray();
+		return $('.listings-container').children().toArray();
 	}
 
 	getAddress(apartment) {
-		console.log(apartment.find('.feedItem-details h3 a').html());
-		return apartment.find('.feedItem-details h3 a').html();
+		return apartment.find('.listing-address').html();
 	}
 
 	getHref(apartment) {
@@ -460,7 +481,10 @@ function getAllApartments() {
 function search(searchString) {
 	return new Promise(function(resolve, reject) {
 		getAddressData(searchString).spread(function(lat, long, closestGbusStop, closestGbusStopDist, formatted_address, walkScore, transitScore, bikeScore, crimeGrade) {
-			resolve(new Apartment(formatted_address, '', '', '', lat, long, walkScore, transitScore, bikeScore, crimeGrade, closestGbusStop, closestGbusStopDist));
+			getGoogleSfStationTravelTimes(lat, long).spread(function(googleTime, sfStationTime) {
+				resolve(new Apartment(formatted_address, '', '', '', lat, long, walkScore, transitScore, bikeScore, crimeGrade, 
+									  closestGbusStop, closestGbusStopDist, googleTime, sfStationTime));
+			}).catch(reject);
 		}).catch(reject);
 	});
 }
