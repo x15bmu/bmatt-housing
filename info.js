@@ -9,7 +9,6 @@ $(document).ready(function() {
 			
 			 $.ajax('/search?' + $(this).serialize()).done(function(data) {
 				data.closestGbusStopDist = Math.round(data.closestGbusStopDist * 1000) / 1000;
-				console.log(data);
 				var context = {
 					apartments: [data]
 				}
