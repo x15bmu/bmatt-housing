@@ -10,6 +10,8 @@ var mapsApiKey = 'AIzaSyCI1GoBPD3_D2V6e_4Erek_UQDD-CjTcVg '
 var googleplexLat = 37.421915;
 var googleplexLon = -122.084100;
 
+console.log('Starting up');
+
 app.get('/', function (req, res) {
   res.sendFile('index.html');
 });
@@ -171,10 +173,10 @@ function getTravelTime(lat1, lon1, lat2, lon2) {
 					var time = json['rows'][0]['elements'][0]['duration_in_traffic']['text'];
 					resolve(time);
 				} else {
-					reject(json['status'], response);
+					reject(json['status']);
 				}
 			} else {
-				reject(error, response);
+				reject(error || response);
 			}
 		});
 	});
@@ -188,7 +190,7 @@ function getWalkScoreBody(formatted_address) {
 			if (!error && response.statusCode === 200) {
 				resolve(body);
 			} else {
-				reject(error, response);
+				reject(error || response);
 			}
 		});
 	});
@@ -263,14 +265,17 @@ class ApartmentGetter {
 			var href = self.getHref(jqApartment);
 			var price = self.getPrice(jqApartment);
 			var image = self.getImage(jqApartment);
+			console.log('processAsync address', address);
 			getAddressData(address).spread(function(lat, long, closestGbusStop, closestGbusStopDist, formatted_address, walkScore, transitScore, bikeScore, crimeGrade) {
 				getTravelTime(lat, long, googleplexLat, googleplexLon).then(function(time) {
+					console.log('resolve processAsync address', address);
 					resolve(new Apartment(address, href, price, image, lat, long, walkScore, transitScore, bikeScore, crimeGrade, closestGbusStop, closestGbusStopDist, time));
 				}).catch(function(error) {
-					return Promise.reject(error);
+					console.log('Reject getTravelTime', error, address);
+					reject(error);
 				});
 			}).catch(function(error) {
-				console.log(error);
+				console.log('Reject processApartmentAsync', error, address);
 				reject(error);
 			});
 		});
@@ -278,8 +283,10 @@ class ApartmentGetter {
 
 	getApartments(url) {
 		var self = this;
+		console.log('Get Apartments:', url);
 		return new Promise(function(resolve, reject) {
 			request(url, function(error, response, body) {
+				console.log('getApartments url response received', url);
 				if (!error && response.statusCode === 200) {
 					var $ = cheerio.load(body);
 					var apartmentItems = self.getApartmentItems($);
@@ -302,9 +309,12 @@ class ApartmentGetter {
 					}).catch(Promise.TimeoutError, function(e) {
 						console.log('Timed out. Got number of apartments: ' + apartments.length);
 						resolve(apartments);
+					}).catch(function(e) {
+						console.log('Unexpected getApartments map error', e);
+						reject(e);
 					});
 				} else {
-					reject(error, response);
+					reject(error || response);
 				}
 			});
 		});
@@ -396,6 +406,7 @@ class ZumperApartmentGetter extends ApartmentGetter {
 var apartmentPromises = null;
 
 function timed() {
+	console.log('Executing timed');
 	var newApartmentPromises = [];
 	if (apartmentPromises === null) {
 		apartmentPromises = newApartmentPromises;
