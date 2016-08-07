@@ -288,6 +288,7 @@ class ApartmentGetter {
 					Promise.map(apartmentItems, function(apartment) {
 						var jqApartment = $(apartment)
 						return self.processApartmentAsync(self, jqApartment).catch(function(error) {
+							console.log('processApartmentAsync error');
 							console.log(error);
 							return Promise.resolve(null);
 						}).then(function(apartment) {
@@ -296,6 +297,7 @@ class ApartmentGetter {
 							}
 						})
 					}).timeout(10000).then(function() {
+						console.log('Resolving apartments');
 						resolve(apartments);
 					}).catch(Promise.TimeoutError, function(e) {
 						console.log('Timed out. Got number of apartments: ' + apartments.length);
@@ -428,6 +430,9 @@ function timed() {
 timed();
 
 function getAllApartments() {
+	for (var p of apartmentPromises) {
+		console.log(p.isFulfilled(), p.isRejected());
+	}
 	return new Promise(function(resolve) {
 		var bigApartmentList = [];
 		console.log('big');
