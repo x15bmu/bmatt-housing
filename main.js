@@ -8,7 +8,8 @@ $(document).ready(function() {
 		$('#loading').show();
 		$.ajax('/apartments').done(function(data) {
 			for (var i = 0; i < data.length; i++) {
-				data[i].closestGbusStopDist = Math.round(data[i].closestGbusStopDist * 1000) / 1000
+				data[i].closestGbusStopDist = Math.round(data[i].closestGbusStopDist * 1000) / 1000;
+				data[i].closestFbStopDist = Math.round(data[i].closestFbStopDist * 1000) / 1000;
 			}
 			$('#loading').hide();
 			apartments = data;

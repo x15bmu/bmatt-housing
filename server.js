@@ -42,25 +42,26 @@ app.listen(process.env.PORT || 3000, function () {
   console.log('Example app listening on port 3000!');
 });
 
-function GoogleBusStop(lat, long, address) {
+function BusStop(lat, long, address) {
 	this.lat = lat;
 	this.long = long;
 	this.address = address;
 };
 
-GoogleBusStop.prototype.getAddress = function() {
+BusStop.prototype.getAddress = function() {
 	return this.address;
 };
-GoogleBusStop.prototype.getLat = function() {
+BusStop.prototype.getLat = function() {
 	return this.lat;
 };
-GoogleBusStop.prototype.getLong = function() {
+BusStop.prototype.getLong = function() {
 	return this.long;
 };
 
 class Apartment {
 	constructor(address, href, price, img, lat, long, walkScore, transitScore, bikeScore, crimeGrade, 
-				closestGbusStop, closestGbusStopDist, timeToGoogle, timeToSfStation) {
+				closestGbusStop, closestGbusStopDist, closestFbStop, closestFbStopDist, 
+				timeToGoogle, timeToSfStation) {
 		this.address = address;
 		this.href = href;
 		this.price = price;
@@ -73,6 +74,8 @@ class Apartment {
 		this.crimeGrade = crimeGrade;
 		this.closestGbusStop = closestGbusStop;
 		this.closestGbusStopDist = closestGbusStopDist;
+		this.closestFbStop = closestFbStop;
+		this.closestFbStopDist = closestFbStopDist;
 		this.timeToGoogle = timeToGoogle;
 		this.timeToSfStation = timeToSfStation;
 	}
@@ -80,36 +83,64 @@ class Apartment {
 
 
 var gbusStops = [
-	new GoogleBusStop(37.799374, -122.43905, 'Lombard @ Pierce'),
-	new GoogleBusStop(37.780259, -122.472442,'Park Presidio @ Geary'),
-	new GoogleBusStop(37.760079, -122.477024,'19th @ Kirkham'),
-	new GoogleBusStop(37.737918, -122.475462, '19th @ Wawona'),
-	new GoogleBusStop(37.79848, -122.424071, 'Van Ness @ Union'),
-	new GoogleBusStop(37.78796, -122.425311, 'Gough @ Bush'),
-	new GoogleBusStop(37.78703, -122.41992, 'Polk St @ Post'),
-	new GoogleBusStop(37.778285, -122.414314, 'Civic Center'),
-	new GoogleBusStop(37.78795, -122.440462, 'Divisadero @ California'),
-	new GoogleBusStop(37.773756, -122.432248, 'Oak @ Steiner'),
-	new GoogleBusStop(37.780452, -122.438954, 'Divisadero @ Eddy'),
-	new GoogleBusStop(37.771099, -122.437137, 'Divisadero @ Haight'),
-	new GoogleBusStop(37.768602, -122.453531, 'Stanyan @ Waller'),
-	new GoogleBusStop(37.761045, -122.435077, '18th @ Castro'),
-	new GoogleBusStop(37.751598, -122.427704, '24th @ Church'),
-	new GoogleBusStop(37.748755, -122.420457, 'Valencia @ 26th'),
-	new GoogleBusStop(37.750969, -122.406313, 'Potrero @ 25th'),
-	new GoogleBusStop(37.748043, -122.419934, 'Cesar Chavez @ Valencia'),
-	new GoogleBusStop(37.74815, -122.413958, 'Cesar Chavez @ Folsom'),
-	new GoogleBusStop(37.748267 -122.409764, 'Cesar Chavez @ Florida'),
-	new GoogleBusStop(37.741083, -122.423944, 'San Jose @ Dolores'),
-	new GoogleBusStop(37.789243, -122.388961, 'Google SF Office'),
-	new GoogleBusStop(37.765535, -122.394787, 'Mississippi @ 17th'),
-	new GoogleBusStop(37.745667, -122.397201, '201 Toland'),
-	new GoogleBusStop(37.733362, -122.433555, 'Glen Park Bart'),
-	new GoogleBusStop(37.79761, -122.40647, 'Columbus @ Broadway'),
-	new GoogleBusStop(37.77817, -122.39695, 'Brannan @ 4th'),
-	new GoogleBusStop(37.76502, -122.41928, '16th @ Mission'),
-	new GoogleBusStop(37.7641673, -122.430559, '16th @ Sanchez')
-]
+	new BusStop(37.799374, -122.43905, 'Lombard @ Pierce'),
+	new BusStop(37.780259, -122.472442,'Park Presidio @ Geary'),
+	new BusStop(37.760079, -122.477024,'19th @ Kirkham'),
+	new BusStop(37.737918, -122.475462, '19th @ Wawona'),
+	new BusStop(37.79848, -122.424071, 'Van Ness @ Union'),
+	new BusStop(37.78796, -122.425311, 'Gough @ Bush'),
+	new BusStop(37.78703, -122.41992, 'Polk St @ Post'),
+	new BusStop(37.778285, -122.414314, 'Civic Center'),
+	new BusStop(37.78795, -122.440462, 'Divisadero @ California'),
+	new BusStop(37.773756, -122.432248, 'Oak @ Steiner'),
+	new BusStop(37.780452, -122.438954, 'Divisadero @ Eddy'),
+	new BusStop(37.771099, -122.437137, 'Divisadero @ Haight'),
+	new BusStop(37.768602, -122.453531, 'Stanyan @ Waller'),
+	new BusStop(37.761045, -122.435077, '18th @ Castro'),
+	new BusStop(37.751598, -122.427704, '24th @ Church'),
+	new BusStop(37.748755, -122.420457, 'Valencia @ 26th'),
+	new BusStop(37.750969, -122.406313, 'Potrero @ 25th'),
+	new BusStop(37.748043, -122.419934, 'Cesar Chavez @ Valencia'),
+	new BusStop(37.74815, -122.413958, 'Cesar Chavez @ Folsom'),
+	new BusStop(37.748267 -122.409764, 'Cesar Chavez @ Florida'),
+	new BusStop(37.741083, -122.423944, 'San Jose @ Dolores'),
+	new BusStop(37.789243, -122.388961, 'Google SF Office'),
+	new BusStop(37.765535, -122.394787, 'Mississippi @ 17th'),
+	new BusStop(37.745667, -122.397201, '201 Toland'),
+	new BusStop(37.733362, -122.433555, 'Glen Park Bart'),
+	new BusStop(37.79761, -122.40647, 'Columbus @ Broadway'),
+	new BusStop(37.77817, -122.39695, 'Brannan @ 4th'),
+	new BusStop(37.76502, -122.41928, '16th @ Mission'),
+	new BusStop(37.7641673, -122.430559, '16th @ Sanchez')
+];
+
+let fbBusStops = [
+	new BusStop(37.799540, -122.439701, 'Lombard & Pierce'),
+	new BusStop(37.798361, -122.424167, 'Van Ness & Union'),
+	new BusStop(37.788041, -122.425547, 'Gough & Bush'),
+	new BusStop(37.778548, -122.414635, '8th & Market'),
+	new BusStop(37.765028, -122.399861, '17th & Wisconsin'),
+	new BusStop(37.761889, -122.410250, 'Bryant & 18th'),
+	new BusStop(37.755722, -122.409528, 'Bryant & 22nd'),
+	new BusStop(37.772167, -122.401917, '7th & Townsend'),
+	new BusStop(37.778934, -122.395337, 'Brannan & 4th'),
+	new BusStop(37.800361, -122.410972, 'North Point and Mason'),
+	new BusStop(37.797639, -122.406528, 'Broadway and Columbus'),
+	new BusStop(37.789222, -122.388778, 'Harrison & Embarcadero'),
+	new BusStop(37.764524, -122.430593, '16th & Sanchez'),
+	new BusStop(37.748847, -122.420791, 'Valencia & 26th'),
+	new BusStop(37.748333, -122.418240, 'Cesar Chavez & Mission'),
+	new BusStop(37.773361, -122.437361, 'Divisadero & Oak'),
+	new BusStop(37.777639, -122.423250, 'Gough & Grove'),
+	new BusStop(37.781056, -122.458778, 'Arguello at Geary'),
+	new BusStop(37.780382, -122.438787, 'Divisadero at Eddy'),
+	new BusStop(37.773354, -122.446226, 'Fell & Masonic'),
+	new BusStop(37.768411, -122.453303, 'Stanyan & Waller'),
+	new BusStop(37.773674, -122.431938, 'Oak & Steiner'),
+	new BusStop(37.749556, -122.433833, 'Castro & 25th'),
+	new BusStop(37.751611, -122.427472, '24th St. & Church'),
+	new BusStop(37.741083, -122.423944, 'San Jose & Dolores')
+];
 
 function deg2rad(deg) {
   return deg * (Math.PI/180)
@@ -129,11 +160,11 @@ function getDistanceFromLatLonInMiles(lat1,lon1,lat2,lon2) {
   return d * 0.6214; // Distance in Miles
 }
 
-function findClosestGbusStop(lat, long) {
+function findClosestBusStop(lat, long, stops) {
 	var minDist = 1e6;
 	var minStop = null;
-	for (var i = 0; i < gbusStops.length; i++) {
-		var stop = gbusStops[i];
+	for (var i = 0; i < stops.length; i++) {
+		var stop = stops[i];
 		var dist = getDistanceFromLatLonInMiles(lat, long, stop.getLat(), stop.getLong());
 		if (dist < minDist) {
 			minStop = stop;
@@ -141,6 +172,14 @@ function findClosestGbusStop(lat, long) {
 		}
 	}
 	return [minStop, minDist];
+}
+
+function findClosestGbusStop(lat, long) {
+	return findClosestBusStop(lat, long, gbusStops);
+}
+
+function findClosestFbBusStop(lat, long) {
+	return findClosestBusStop(lat, long, fbBusStops);
 }
 
 function addressToLatLongAddress(address) {
@@ -219,7 +258,9 @@ function getWalkScoreBody(formatted_address) {
 
 function getAddressData(address) {
 	return new Promise(function(resolve, reject) {
-		var lat, long, closestGbusStop, closestGbusStopDist, formatted_address, walkScore, transitScore, bikeScore, crimeGrade;
+		var lat, long, closestGbusStop, closestGbusStopDist, closestFbStop, closestFbStopDist;
+		var formatted_address, walkScore, transitScore, bikeScore, crimeGrade;
+
 		var llAddress = address;
 		if (!llAddress.includes('San Francisco')) {
 			llAddress = llAddress + ' San Francisco';
@@ -232,6 +273,10 @@ function getAddressData(address) {
 			var arr = findClosestGbusStop(lat, long);
 			closestGbusStop = arr[0];
 			closestGbusStopDist = arr[1];
+
+			arr = findClosestFbBusStop(lat, long);
+			closestFbStop = arr[0];
+			closestFbStopDist = arr[1];
 			return formatted_address;
 		}).then(getWalkScoreBody).then(function(body) {
 			var $ = cheerio.load(body);
@@ -254,7 +299,8 @@ function getAddressData(address) {
 			if (crimeGrades.length > 0) {
 				crimeGrade = $(crimeGrades[0]).html().replace(/ /g, '') || 'unknown';
 			}
-			resolve([lat, long, closestGbusStop, closestGbusStopDist, formatted_address, walkScore, transitScore, bikeScore, crimeGrade]);
+			resolve([lat, long, closestGbusStop, closestGbusStopDist, closestFbStop, closestFbStopDist,
+					 formatted_address, walkScore, transitScore, bikeScore, crimeGrade]);
 		}).catch(reject);
 	});
 }
@@ -287,11 +333,13 @@ class ApartmentGetter {
 			var price = self.getPrice(jqApartment);
 			var image = self.getImage(jqApartment);
 			console.log('processAsync address', address);
-			getAddressData(address).spread(function(lat, long, closestGbusStop, closestGbusStopDist, formatted_address, walkScore, transitScore, bikeScore, crimeGrade) {
+			getAddressData(address).spread(function(lat, long, closestGbusStop, closestGbusStopDist, closestFbStop, closestFbStopDist, 
+													formatted_address, walkScore, transitScore, bikeScore, crimeGrade) {
 				getGoogleSfStationTravelTimes(lat, long).spread(function(googleTime, sfStationTime) {
 					console.log('resolve processAsync address', address);
 					resolve(new Apartment(address, href, price, image, lat, long, walkScore, transitScore, bikeScore, crimeGrade, 
-										  closestGbusStop, closestGbusStopDist, googleTime, sfStationTime));
+										  closestGbusStop, closestGbusStopDist, closestFbStop, closestFbStopDist, 
+										  googleTime, sfStationTime));
 				}).catch(function(error) {
 					console.log('Reject getTravelTime', error, address);
 					reject(error);
@@ -480,10 +528,11 @@ function getAllApartments() {
 
 function search(searchString) {
 	return new Promise(function(resolve, reject) {
-		getAddressData(searchString).spread(function(lat, long, closestGbusStop, closestGbusStopDist, formatted_address, walkScore, transitScore, bikeScore, crimeGrade) {
+		getAddressData(searchString).spread(function(lat, long, closestGbusStop, closestGbusStopDist, closestFbStop, closestFbStopDist, 
+													 formatted_address, walkScore, transitScore, bikeScore, crimeGrade) {
 			getGoogleSfStationTravelTimes(lat, long).spread(function(googleTime, sfStationTime) {
 				resolve(new Apartment(formatted_address, '', '', '', lat, long, walkScore, transitScore, bikeScore, crimeGrade, 
-									  closestGbusStop, closestGbusStopDist, googleTime, sfStationTime));
+									  closestGbusStop, closestGbusStopDist, closestFbStop, closestFbStopDist, googleTime, sfStationTime));
 			}).catch(reject);
 		}).catch(reject);
 	});
